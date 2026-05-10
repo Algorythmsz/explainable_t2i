@@ -1,0 +1,9 @@
+numpy>=1.24
+pillow>=10.0
+tqdm>=4.66
+transformers>=4.40
+torch>=2.1
+
+# Optional but commonly used for CLIP-related image pipelines
+torchvision>=0.16
+torchaudio>=2.1
