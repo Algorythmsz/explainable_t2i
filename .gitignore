@@ -1,0 +1,8 @@
+# Flickr30k dataset
+/data/flickr30k/Images/
+/data/flickr30k/flickr30k/
+/data/flickr30k/*.zip
+/data/flickr30k/flickr30k_part*
+
+# Optional generated artifacts
+/artifacts/
