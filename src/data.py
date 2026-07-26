@@ -3,18 +3,16 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import torch
-
 from clip_model import encode_images, encode_texts, load_clip
 from dataset_io import load_caption_rows, make_image_caption_map, split_images
 from index_io import load_index, save_index
 from retrieval import evaluate_recall, topk_search
-from utils import seed_everything
+from utils import resolve_device, seed_everything
 
 
 def build_index_main(args: argparse.Namespace) -> None:
     seed_everything(args.seed)
-    device = "cuda" if torch.cuda.is_available() and not args.cpu else "cpu"
+    device = resolve_device(args.cpu)
 
     images_dir = Path(args.images_dir)
     captions_file = Path(args.captions_file)
@@ -61,7 +59,7 @@ def build_index_main(args: argparse.Namespace) -> None:
 
 def eval_main(args: argparse.Namespace) -> None:
     seed_everything(args.seed)
-    device = "cuda" if torch.cuda.is_available() and not args.cpu else "cpu"
+    device = resolve_device(args.cpu)
     index_dir = Path(args.index_dir)
 
     image_embeddings, _, splits, image_to_captions, meta, name_to_idx = load_index(index_dir)
@@ -89,7 +87,7 @@ def eval_main(args: argparse.Namespace) -> None:
 
 def topk_main(args: argparse.Namespace) -> None:
     seed_everything(args.seed)
-    device = "cuda" if torch.cuda.is_available() and not args.cpu else "cpu"
+    device = resolve_device(args.cpu)
 
     index_dir = Path(args.index_dir)
     image_embeddings, image_names, _, _, meta, _ = load_index(index_dir)
@@ -104,6 +102,19 @@ def topk_main(args: argparse.Namespace) -> None:
     print("Top-k retrieval results:")
     for rank, (idx, score) in enumerate(zip(topk_idx[0], topk_scores[0]), start=1):
         print(f"{rank:2d}. {image_names[int(idx)]} | score={float(score):.4f}")
+
+
+def serve_main(args: argparse.Namespace) -> None:
+    from webapp import run_server
+
+    run_server(
+        index_dir=args.index_dir,
+        images_dir=args.images_dir,
+        host=args.host,
+        port=args.port,
+        model_name=args.model_name,
+        cpu=args.cpu,
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -139,6 +150,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_topk.add_argument("--model-name", type=str, default=None)
     p_topk.add_argument("--cpu", action="store_true")
     p_topk.set_defaults(func=topk_main)
+
+    p_serve = sub.add_parser("serve", help="Run the web demo (CLIP explainer + search + negation)")
+    p_serve.add_argument("--index-dir", type=str, required=True)
+    p_serve.add_argument("--images-dir", type=str, default="data/flickr30k/Images")
+    p_serve.add_argument("--host", type=str, default="127.0.0.1")
+    p_serve.add_argument("--port", type=int, default=8000)
+    p_serve.add_argument("--model-name", type=str, default=None)
+    p_serve.add_argument("--cpu", action="store_true")
+    p_serve.set_defaults(func=serve_main)
 
     return parser
 
