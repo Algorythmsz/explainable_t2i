@@ -75,16 +75,72 @@ pip install -r requirements.txt
 ### 3단계 · Flickr30k 이미지 내려받기
 
 이미지는 용량이 커서 저장소에 **들어 있지 않습니다.** 캡션 파일(`data/flickr30k/captions.txt`)은
-이미 복제되어 있으니, 이미지(약 3만 장)만 받아 `data/flickr30k/Images/` 폴더에 넣어주세요.
+이미 복제되어 있으니, 이미지(약 3만 장 · 압축파일 **4.4GB**)만 받아
+`data/flickr30k/Images/` 폴더에 넣어주세요.
 
-- Kaggle이나 Hugging Face에서 **"Flickr30k"**로 검색하면 받을 수 있어요.
-- 압축을 풀면 나오는 `.jpg` 파일들을 아래처럼 놓으면 됩니다.
+아래 명령을 **프로젝트 폴더(0단계에서 들어간 곳)에서** 그대로 복사해 실행하면 됩니다.
+회원가입이나 토큰은 필요 없어요. (다운로드에 회선 속도에 따라 10~30분 정도 걸립니다.)
+
+**맥 / 리눅스 (터미널)**
+```bash
+mkdir -p data/flickr30k
+curl -L -C - -o data/flickr30k/flickr30k-images.zip \
+  https://huggingface.co/datasets/nlphuji/flickr30k/resolve/main/flickr30k-images.zip
+
+unzip -q data/flickr30k/flickr30k-images.zip -d data/flickr30k
+mv data/flickr30k/flickr30k-images data/flickr30k/Images
+rm data/flickr30k/flickr30k-images.zip        # 압축파일 삭제(4.4GB 확보)
+```
+- `-C -`는 **이어받기** 옵션입니다. 중간에 끊기면 같은 명령을 다시 실행하면 이어서 받습니다.
+
+**윈도우 (PowerShell)**
+```powershell
+New-Item -ItemType Directory -Force data\flickr30k | Out-Null
+curl.exe -L -C - -o data\flickr30k\flickr30k-images.zip `
+  https://huggingface.co/datasets/nlphuji/flickr30k/resolve/main/flickr30k-images.zip
+
+Expand-Archive data\flickr30k\flickr30k-images.zip -DestinationPath data\flickr30k
+Rename-Item data\flickr30k\flickr30k-images Images
+Remove-Item data\flickr30k\flickr30k-images.zip
+```
+
+**파이썬으로 받기 (선택 · 진행률 표시 + 자동 이어받기)**
+```bash
+pip install huggingface_hub
+```
+```python
+# download_flickr30k.py 로 저장한 뒤  python3 download_flickr30k.py
+import shutil, zipfile
+from pathlib import Path
+from huggingface_hub import hf_hub_download
+
+root = Path("data/flickr30k")
+images_dir = root / "Images"
+if images_dir.exists():
+    raise SystemExit(f"이미 존재합니다: {images_dir}")
+
+zip_path = hf_hub_download(
+    repo_id="nlphuji/flickr30k",
+    filename="flickr30k-images.zip",
+    repo_type="dataset",
+)
+with zipfile.ZipFile(zip_path) as zf:
+    zf.extractall(root)                       # -> data/flickr30k/flickr30k-images/
+shutil.move(str(root / "flickr30k-images"), str(images_dir))
+print("완료:", len(list(images_dir.glob("*.jpg"))), "장")
+```
+
+> 다른 경로로 받고 싶다면 4·5단계의 `--images-dir` 값만 바꿔주면 됩니다.
+> Kaggle에서 **"Flickr30k"**로 검색해 받아도 되고, 그때는 압축을 풀어 나온 `.jpg`들을
+> `data/flickr30k/Images/` 안에 직접 넣으면 됩니다.
+
+- 최종적으로 아래 모양이 되어야 합니다.
   ```
   data/flickr30k/Images/1000092795.jpg
   data/flickr30k/Images/1000268201.jpg
   ...
   ```
-- ✅ 잘 들어갔는지 확인 (3만 개 정도 나오면 성공):
+- ✅ 잘 들어갔는지 확인 (**31783**이 나오면 성공):
   ```bash
   ls data/flickr30k/Images | wc -l          # 윈도우(PowerShell): (ls data/flickr30k/Images).Count
   ```
