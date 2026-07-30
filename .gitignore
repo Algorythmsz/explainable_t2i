@@ -6,3 +6,12 @@
 
 # Optional generated artifacts
 /artifacts/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
